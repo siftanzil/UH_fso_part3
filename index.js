@@ -40,7 +40,7 @@ phonebook.forEach((element) => {
 // use express for HTTP requests
 
 app.get("/", (req, res) => {
-   res.send(phonebook);
+   res.send("<h1>Let's find the number in the Phonebook!</h1>");
 });
 
 app.get("/api/persons", (req, res) => {
@@ -50,6 +50,12 @@ app.get("/api/persons", (req, res) => {
 app.get("/info", (req, res) => {
    res.send(`<p>Phonebook has info for ${phonebook.length} people</p>
     <p>${new Date()}</p>`);
+});
+
+app.get("/api/persons/:id", (req, res) => {
+   let id = Number(req.params.id);
+   let contact = phonebook.find((contact) => contact.id === id);
+   res.send(`${contact.id} - ${contact.name} - ${contact.number}`);
 });
 
 const PORT = 3001;
