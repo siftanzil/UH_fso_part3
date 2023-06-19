@@ -31,12 +31,6 @@ let phonebook = [
    },
 ];
 
-// log numbers in console
-
-phonebook.forEach((element) => {
-   console.log(element.id, element.name, element.number);
-});
-
 // use express for HTTP requests
 
 app.get("/", (req, res) => {
@@ -56,6 +50,13 @@ app.get("/api/persons/:id", (req, res) => {
    let id = Number(req.params.id);
    let contact = phonebook.find((contact) => contact.id === id);
    res.send(`${contact.id} - ${contact.name} - ${contact.number}`);
+});
+
+app.delete("/api/persons/:id", (req, res) => {
+   const id = Number(req.params.id);
+   phonebook = phonebook.filter((contact) => contact.id !== id);
+
+   res.status(204).end();
 });
 
 const PORT = 3001;
