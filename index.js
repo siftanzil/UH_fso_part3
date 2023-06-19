@@ -1,7 +1,18 @@
 const express = require("express");
+const morgan = require("morgan");
 const app = express();
 
 app.use(express.json());
+
+morgan.token("body", (req) => {
+   return JSON.stringify(req.body);
+});
+
+app.use(morgan(":method :url :status :response-time ms :body"));
+
+const unknownEndpoint = (request, response) => {
+   response.status(404).send({ error: "unknown endpoint" });
+};
 
 // phonebook data
 
@@ -51,7 +62,15 @@ app.get("/info", (req, res) => {
 app.get("/api/persons/:id", (req, res) => {
    let id = Number(req.params.id);
    let contact = phonebook.find((contact) => contact.id === id);
-   res.send(`${contact.id} - ${contact.name} - ${contact.number}`);
+   if (contact) {
+      res.send(
+         `<h2 style = "color: blue; font-size: 30">(${contact.id}) ___ ${contact.name} ___ +${contact.number}</h2>`,
+      );
+   } else {
+      res.status(400).send(
+         `<p style = "color: red; font-size: 30">No matching contact found with id <b>${id}</b>!</p>`,
+      );
+   }
 });
 
 app.delete("/api/persons/:id", (req, res) => {
@@ -69,19 +88,21 @@ app.post("/api/persons", (req, res) => {
       matchingContact = phonebook.find(
          (contact) => contact.name === person.name,
       );
-      console.log(matchingContact);
+      // console.log(matchingContact);
    }
 
    if (person.name && person.number && !matchingContact) {
       person.id = Math.random();
       phonebook = phonebook.concat(person);
-      res.json(phonebook);
+      res.json(phonebook).status(201);
    } else {
-      res.status(400).send(
+      res.status(406).send(
          "{'error': 'name must be unique and form must be fully filled'}",
       );
    }
 });
+
+app.use(unknownEndpoint);
 
 const PORT = 3001;
 app.listen(PORT, () => {
