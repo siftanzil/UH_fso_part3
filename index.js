@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 
+app.use(express.json());
+
 // phonebook data
 
 let phonebook = [
@@ -57,6 +59,28 @@ app.delete("/api/persons/:id", (req, res) => {
    phonebook = phonebook.filter((contact) => contact.id !== id);
 
    res.status(204).end();
+});
+
+app.post("/api/persons", (req, res) => {
+   const person = req.body;
+   let matchingContact;
+
+   if (person.name && person.number) {
+      matchingContact = phonebook.find(
+         (contact) => contact.name === person.name,
+      );
+      console.log(matchingContact);
+   }
+
+   if (person.name && person.number && !matchingContact) {
+      person.id = Math.random();
+      phonebook = phonebook.concat(person);
+      res.json(phonebook);
+   } else {
+      res.status(400).send(
+         "{'error': 'name must be unique and form must be fully filled'}",
+      );
+   }
 });
 
 const PORT = 3001;
