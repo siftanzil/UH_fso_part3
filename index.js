@@ -1,7 +1,10 @@
 const express = require("express");
 const morgan = require("morgan");
+const cors = require("cors");
 const app = express();
 
+app.use(cors());
+app.use(express.static("build"));
 app.use(express.json());
 
 morgan.token("body", (req) => {
@@ -47,7 +50,9 @@ let phonebook = [
 // use express for HTTP requests
 
 app.get("/", (req, res) => {
-   res.send("<h1>Let's find the number in the Phonebook!</h1>");
+   res.send(
+      `<h1>Let's find the number in the Phonebook!</h1><br/><a href="./api/persons">./api/persons/</a><br/><p>./api/persons/{id}</p>`,
+   );
 });
 
 app.get("/api/persons", (req, res) => {
