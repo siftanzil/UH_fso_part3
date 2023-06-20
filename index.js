@@ -40,11 +40,6 @@ let phonebook = [
       name: "Mary Poppendieck",
       number: "39-23-6423122",
    },
-   {
-      id: 5,
-      name: "Mars Poppendieck",
-      number: "38-23-6423122",
-   },
 ];
 
 // use express for HTTP requests
