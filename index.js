@@ -1,97 +1,93 @@
+require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
 const app = express();
+const Person = require("./models/person");
 
-app.use(cors());
-app.use(express.static("build"));
-app.use(express.json());
-
-morgan.token("body", (req) => {
-   return JSON.stringify(req.body);
-});
-
-app.use(morgan(":method :url :status :response-time ms :body"));
-
+// if the endpoint does not match
 const unknownEndpoint = (request, response) => {
    response.status(404).send({ error: "unknown endpoint" });
 };
 
-// phonebook data
+// Default error handler function
+const errorHandler = (error, request, res, next) => {
+   console.error(error.message);
 
-let phonebook = [
-   {
-      id: 1,
-      name: "Arto Hellas",
-      number: "040-123456",
-   },
-   {
-      id: 2,
-      name: "Ada Lovelace",
-      number: "39-44-5323523",
-   },
-   {
-      id: 3,
-      name: "Dan Abramov",
-      number: "12-43-234345",
-   },
-   {
-      id: 4,
-      name: "Mary Poppendieck",
-      number: "39-23-6423122",
-   },
-];
+   if (error.name === "CastError") {
+      return res.status(400).send({ error: "malformed id" });
+   }
 
-// use express for HTTP requests
+   next(error);
+};
 
-app.get("/", (req, res) => {
+// Morgan token
+morgan.token("body", (request) => {
+   return JSON.stringify(request.body);
+});
+
+// Loading Middlewares
+app.use(cors());
+app.use(express.static("build"));
+app.use(express.json());
+app.use(morgan(":method :url :status :response-time ms :body"));
+
+// Express for HTTP requests routes
+
+// Home page
+app.get("/", (request, res) => {
    res.send(
       `<h1>Let's find the number in the Phonebook!</h1><br/><a href="./api/persons">./api/persons/</a><br/><p>./api/persons/{id}</p>`,
    );
 });
 
-app.get("/api/persons", (req, res) => {
-   res.json(phonebook);
+// get all persons from db
+app.get("/api/persons", (request, res) => {
+   Person.find({}).then((persons) => {
+      res.json(persons);
+   });
 });
 
-app.get("/info", (req, res) => {
+// get info of the db
+app.get("/info", (request, res) => {
    res.send(`<p>Phonebook has info for ${phonebook.length} people</p>
     <p>${new Date()}</p>`);
 });
 
-app.get("/api/persons/:id", (req, res) => {
-   let id = Number(req.params.id);
-   let contact = phonebook.find((contact) => contact.id === id);
-   if (contact) {
-      res.send(
-         `<h2 style = "color: blue; font-size: 30">(${contact.id}) ___ ${contact.name} ___ +${contact.number}</h2>`,
-      );
-   } else {
-      res.status(400).send(
-         `<p style = "color: red; font-size: 30">No matching contact found with id <b>${id}</b>!</p>`,
-      );
-   }
+// get specific person
+app.get("/api/persons/:id", (request, res, next) => {
+   console.log(request.params.id);
+   Person.findById(request.params.id)
+      .then((person) => {
+         if (person) {
+            res.json(person);
+         } else {
+            res.status(404).send({ error: "not found" });
+         }
+      })
+      .catch((error) => next(error));
 });
 
-app.delete("/api/persons/:id", (req, res) => {
-   const id = Number(req.params.id);
-   phonebook = phonebook.filter((contact) => contact.id !== id);
-
-   res.status(204).end();
+// delete a person
+app.delete("/api/persons/:id", (request, res, next) => {
+   Person.findByIdAndRemove(request.params.id)
+      .then((result) => {
+         res.status(204).end();
+      })
+      .catch((error) => next(error));
 });
 
-app.post("/api/persons", (req, res) => {
-   const person = req.body;
-   let matchingContact;
+/*
+// add or replace new person
+app.post("/api/persons", (request, res) => {
+   const person = request.body;
+   let matchingperson;
 
    if (person.name && person.number) {
-      matchingContact = phonebook.find(
-         (contact) => contact.name === person.name,
-      );
-      // console.log(matchingContact);
+      matchingperson = phonebook.find((person) => person.name === person.name);
    }
 
-   if (person.name && person.number && !matchingContact) {
+   if (person.name && person.number && !matchingperson) {
       person.id = Math.random();
       phonebook = phonebook.concat(person);
       res.json(phonebook).status(201);
@@ -101,10 +97,49 @@ app.post("/api/persons", (req, res) => {
       );
    }
 });
+*/
 
+// add new person
+app.post("/api/persons", (request, response) => {
+   const body = request.body;
+
+   if (false || (body.name && body.number)) {
+      const person = new Person({
+         name: body.name,
+         number: body.number,
+      });
+
+      person.save().then((savedPerson) => {
+         response.json(savedPerson);
+      });
+   } else {
+      response.status(400).json({ error: "fill both name and number!" });
+   }
+});
+
+// update existing person
+app.put("/api/persons/:id", (request, response, next) => {
+   const body = request.body;
+   const person = {
+      name: body.name,
+      number: body.number,
+   };
+
+   Person.findByIdAndUpdate(request.params.id, person, { new: true })
+      .then((updatedPerson) => {
+         response.json(updatedPerson);
+      })
+      .catch((error) => next(error));
+});
+
+// if the endpoint does not match
 app.use(unknownEndpoint);
 
-const PORT = process.env.PORT || 3001;
+// handler of requests with result to errors
+app.use(errorHandler);
+
+// server port
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
    console.log(`server is running on port ${PORT}`);
 });

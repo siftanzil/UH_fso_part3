@@ -1,0 +1,7 @@
+PUT http://localhost:3001/api/persons/64941ef7d0f5aa3b7de6bd7b HTTP/1.1
+content-type: application/json
+
+{
+"name": "Sifat Ullah Tanzil",
+"number": "01888888888"
+}
