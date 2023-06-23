@@ -77,28 +77,6 @@ app.delete("/api/persons/:id", (request, res, next) => {
       .catch((error) => next(error));
 });
 
-/*
-// add or replace new person
-app.post("/api/persons", (request, res) => {
-   const person = request.body;
-   let matchingperson;
-
-   if (person.name && person.number) {
-      matchingperson = phonebook.find((person) => person.name === person.name);
-   }
-
-   if (person.name && person.number && !matchingperson) {
-      person.id = Math.random();
-      phonebook = phonebook.concat(person);
-      res.json(phonebook).status(201);
-   } else {
-      res.status(406).send(
-         "{'error': 'name must be unique and form must be fully filled'}",
-      );
-   }
-});
-*/
-
 // add new person
 app.post("/api/persons", (request, response) => {
    const body = request.body;
@@ -109,9 +87,14 @@ app.post("/api/persons", (request, response) => {
          number: body.number,
       });
 
-      person.save().then((savedPerson) => {
-         response.json(savedPerson);
-      });
+      person
+         .save()
+         .then((savedPerson) => {
+            response.json(savedPerson);
+         })
+         .catch((error) =>
+            response.status(409).send(error.errors.name.message),
+         );
    } else {
       response.status(400).json({ error: "fill both name and number!" });
    }
@@ -129,7 +112,9 @@ app.put("/api/persons/:id", (request, response, next) => {
       .then((updatedPerson) => {
          response.json(updatedPerson);
       })
-      .catch((error) => next(error));
+      .catch((error) => {
+         response.send(error.response.data.error);
+      });
 });
 
 // if the endpoint does not match
