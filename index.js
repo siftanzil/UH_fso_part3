@@ -92,9 +92,7 @@ app.post("/api/persons", (request, response) => {
          .then((savedPerson) => {
             response.json(savedPerson);
          })
-         .catch((error) =>
-            response.status(409).send(error.errors.name.message),
-         );
+         .catch((error) => response.status(409).send(error.message));
    } else {
       response.status(400).json({ error: "fill both name and number!" });
    }
@@ -108,12 +106,16 @@ app.put("/api/persons/:id", (request, response, next) => {
       number: body.number,
    };
 
-   Person.findByIdAndUpdate(request.params.id, person, { new: true })
+   Person.findByIdAndUpdate(request.params.id, person, {
+      new: true,
+      runValidators: true,
+   })
       .then((updatedPerson) => {
          response.json(updatedPerson);
       })
       .catch((error) => {
-         response.send(error.response.data.error);
+         console.log(error.message);
+         response.status(409).send(error.message);
       });
 });
 
